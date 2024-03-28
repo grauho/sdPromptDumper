@@ -19,7 +19,7 @@ this was a fun excuse to write a little non-destructive tokenizer and dig into
 the PNG specification a little bit.
 
 Tested and works on images produced by the following programs:
-* stable-diffusion.cpp
+* [stable-diffusion.cpp] (https://github.com/leejet/stable-diffusion.cpp)
 * civitai.com (mostly)
 
 ## Building
