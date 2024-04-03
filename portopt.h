@@ -12,7 +12,7 @@
 
 /* Checks if a given ASCII encoded character is a number */
 #define PORTOPT_IS_NUM(x) \
-	((((x) > 47) && ((x) < 58)) ? PORTOPT_TRUE : PORTOPT_FALSE)
+	((((x) >= '0') && ((x) <= '9')) ? PORTOPT_TRUE : PORTOPT_FALSE)
 
 #ifndef PORTOPT_DISABLE_LOGGING
 /* Not freestanding C90 compatable, but disablable */
