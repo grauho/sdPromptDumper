@@ -63,7 +63,7 @@ static size_t portcfgFetchLine(char *buffer, size_t lim, FILE *fhandle)
 	{
 		while ((len < lim - 1) && (tmp = fgetc(fhandle)) != EOF)
 		{
-			buffer[len++] = tmp;
+			buffer[len++] = (char) tmp;
 
 			if (tmp == '\n')
 			{

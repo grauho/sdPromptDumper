@@ -125,7 +125,12 @@ static void printSize(const char *str, const size_t len)
 
 	if (str != NULL)
 	{
-		for (tmp = 0; str[tmp] != 'x'; tmp++);
+		for (tmp = 0; (tmp < len) && (str[tmp] != 'x'); tmp++);
+
+		if (tmp == len) /* Bad token */
+		{
+			return;
+		}
 
 		fputs((abrv_flags == STI_TRUE) ? "-W " : "--width ", stdout);
 		printLen(str, tmp);
@@ -153,8 +158,8 @@ static size_t hashString(const unsigned char *str)
 
 static int addToParamTable(struct paramHashNode *node)
 {
-	size_t index = hashString((const unsigned char *) node->encode_name) 
-		% PARAM_TABLE_LEN;
+	const size_t index = hashString(
+		(const unsigned char *) node->encode_name) % PARAM_TABLE_LEN;
 	struct paramHashNode *cursor = param_table[index];
 
 	if (cursor == NULL)
@@ -197,7 +202,7 @@ static int setupHashtable(void)
 
 static struct paramHashNode* hashLookup(const char *name)
 {
-	size_t index 
+	const size_t index 
 		= hashString((const unsigned char *) name) % PARAM_TABLE_LEN;
 	struct paramHashNode *cursor = param_table[index];
 
@@ -440,7 +445,8 @@ int main(int argc, char **argv)
 		{'e', "endian", PORTOPT_FALSE},
 		{'h', "help",   PORTOPT_FALSE}
 	};
-	size_t num_opts = sizeof(opts) / sizeof(opts[0]);
+	const size_t num_opts = sizeof(opts) / sizeof(opts[0]);
+	const size_t argl = (size_t) argc;
 	size_t i, ind = 0;
 	char *alt_cfg_path = NULL;
 	int flag, num_bad_files = 0;
@@ -452,35 +458,35 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	while ((flag = portoptVerbose(argc, argv, opts, num_opts, &ind)) != -1)
+	while ((flag = portoptVerbose(argl, argv, opts, num_opts, &ind)) != -1)
 	{
 		switch (flag)
 		{
 			case 'M':
 				model_path = lazyStrdup(portoptGetArg(
-					argc, argv, &ind));
+					argl, argv, &ind));
 				break;
 			case 'L':
 				lora_path = lazyStrdup(portoptGetArg(
-					argc, argv, &ind));
+					argl, argv, &ind));
 				break;
 			case 'B':
 				bin_path = lazyStrdup(portoptGetArg(
-					argc, argv, &ind));
+					argl, argv, &ind));
 				break;
 			case 'E':
 				exe_name = lazyStrdup(portoptGetArg(
-					argc, argv, &ind));
+					argl, argv, &ind));
 				break;
 			case 'V':
 				vae_path = lazyStrdup(portoptGetArg(
-					argc, argv, &ind));
+					argl, argv, &ind));
 				break;
 			case 'a':
 				abrv_flags = STI_TRUE;
 				break;
 			case 'c':
-				alt_cfg_path = portoptGetArg(argc, argv, &ind);
+				alt_cfg_path = portoptGetArg(argl, argv, &ind);
 				break;
 			case 'e':
 				fputs((porteggIsLittle() == PORTEGG_TRUE)
