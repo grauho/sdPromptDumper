@@ -7,12 +7,14 @@
 #include "portegg.h"
 #include "stiTokenizer.h"
 #include "pngProcessing.h"
+#include "loadConfig.h"
 
-/* Could have defaults for these in some kind of config or ini file */
+/* Arguments that may be modified by command line switches or .cfg file */
 char *model_path    = NULL;
 char *lora_path     = NULL;
 char *vae_path      = NULL;
 char *bin_path      = NULL;
+char *exe_name      = NULL;
 STI_BOOL abrv_flags = STI_FALSE;
 
 typedef void (PrintFunc)(const char *str, const size_t len);
@@ -210,6 +212,7 @@ static struct paramHashNode* hashLookup(const char *name)
 	return NULL;
 }
 
+/* XXX: Unused, but pretty */
 static void dumpHashtable(void)
 {
 	struct paramHashNode *cursor = NULL;
@@ -237,9 +240,16 @@ static void dumpHashtable(void)
 static void processTokens(const char *buffer, const struct stiToken *stack,
 	const size_t depth)
 {
+#ifndef _WIN32
+	const char *default_exe = "sd";
+#else
+	const char *default_exe = "sd.exe";
+#endif
 	size_t i, j;
 
-	fprintf(stdout, "%ssd ", (bin_path == NULL) ? "" : bin_path);
+	fprintf(stdout, "%s%s ", 
+		(bin_path == NULL) ? "" : bin_path, 
+		(exe_name == NULL) ? default_exe : exe_name);
 
 	for (i = 0; i < depth; i++)
 	{
@@ -281,12 +291,12 @@ static void processTokens(const char *buffer, const struct stiToken *stack,
 
 	if (vae_path != NULL)
 	{
-		fprintf(stdout, "--vae \"%s\" ", vae_path);
+		fprintf(stdout, "--vae %s ", vae_path);
 	}
 
 	if (lora_path != NULL)
 	{
-		fprintf(stdout, "--lora-model-dir \"%s\" ", lora_path);
+		fprintf(stdout, "--lora-model-dir %s ", lora_path);
 	}
 
 	fputs("--color ", stdout);
@@ -381,16 +391,35 @@ static int dumpSDPrompt(FILE *fhandle)
 	return 0;
 }
 
+static char* lazyStrdup(const char *src)
+{
+	char *dst = NULL;
+
+	if (src != NULL)
+	{
+		const size_t len = strlen(src) + 1;
+
+		if ((dst = malloc(sizeof(char) * (len))) != NULL)
+		{
+			dst = strncpy(dst, src, len);
+		}
+	}
+
+	return dst;
+}
+
 static void printHelp(void)
 {
 	fputs("stable-diffusion.cpp Prompt Dumper, sdPromptDumper:\n\n"
-		"-M, --model <DIR PATH> : Path to the user's model directory\n"
-		"-L, --lora  <DIR PATH> : Path to the user's LoRA directory\n"
-		"-B, --bin   <DIR PATH> : Path to sd binary directory\n"
-		"-V, --vae  <FILE PATH> : As above, include the file as well\n"
-		"-a, --abrv             : Abbreviates switch names in output\n"
-		"-e, --endian           : Prints assumed endian form, exits\n"
-		"-h, --help             : Prints this help message, exits\n\n"
+		"-M, --model  <DIR PATH> : Path to user's model directory\n"
+		"-L, --lora   <DIR PATH> : Path to user's LoRA directory\n"
+		"-B, --bin    <DIR PATH> : Path to sd binary directory\n"
+		"-E, --exe   <FILE NAME> : Alternative name for executable\n" 
+		"-V, --vae   <FILE PATH> : As above, include file as well\n"
+		"-c, --config <DIR PATH> : Path to alt config file directory\n"
+		"-a, --abrv              : Abbreviates switches in output\n"
+		"-e, --endian            : Prints assumed endian form, exits\n"
+		"-h, --help              : Prints this help message, exits\n\n"
 		"./sdPromptDumper [FLAGS]... [PNG Files]...\n\n"
 		"Example:\n"
 		"./sdPromptDumper --model ~/.models/ --vae ./myVAE.safetensors"
@@ -404,13 +433,16 @@ int main(int argc, char **argv)
 		{'M', "model",  PORTOPT_TRUE},
 		{'L', "lora",   PORTOPT_TRUE},
 		{'B', "bin",    PORTOPT_TRUE},
+		{'E', "exe",    PORTOPT_TRUE},
 		{'V', "vae",    PORTOPT_TRUE},
+		{'c', "config", PORTOPT_TRUE},
 		{'a', "abrv",   PORTOPT_FALSE},
 		{'e', "endian", PORTOPT_FALSE},
 		{'h', "help",   PORTOPT_FALSE}
 	};
 	size_t num_opts = sizeof(opts) / sizeof(opts[0]);
 	size_t i, ind = 0;
+	char *alt_cfg_path = NULL;
 	int flag, num_bad_files = 0;
 
 	if (setupHashtable() == 1)
@@ -425,19 +457,30 @@ int main(int argc, char **argv)
 		switch (flag)
 		{
 			case 'M':
-				model_path = portoptGetArg(argc, argv, &ind);
+				model_path = lazyStrdup(portoptGetArg(
+					argc, argv, &ind));
 				break;
 			case 'L':
-				lora_path = portoptGetArg(argc, argv, &ind);
+				lora_path = lazyStrdup(portoptGetArg(
+					argc, argv, &ind));
 				break;
 			case 'B':
-				bin_path = portoptGetArg(argc, argv, &ind);
+				bin_path = lazyStrdup(portoptGetArg(
+					argc, argv, &ind));
+				break;
+			case 'E':
+				exe_name = lazyStrdup(portoptGetArg(
+					argc, argv, &ind));
 				break;
 			case 'V':
-				vae_path = portoptGetArg(argc, argv, &ind);
+				vae_path = lazyStrdup(portoptGetArg(
+					argc, argv, &ind));
 				break;
 			case 'a':
 				abrv_flags = STI_TRUE;
+				break;
+			case 'c':
+				alt_cfg_path = portoptGetArg(argc, argv, &ind);
 				break;
 			case 'e':
 				fputs((porteggIsLittle() == PORTEGG_TRUE)
@@ -458,6 +501,21 @@ int main(int argc, char **argv)
 		fputs("Please supply a file path to an image generated with "
 			"stable-diffusion.cpp\nAlternatively use -h or "
 			"--help for more information\n", stdout);
+	}
+	else /* only bother to fetch config if there are png arguments */
+	{
+		struct cfgArguments tmp = {&model_path, &lora_path, &vae_path, 
+			&bin_path, &exe_name, 0};
+
+		if (abrv_flags == STI_FALSE)
+		{
+			tmp.abrv = &abrv_flags;
+		}
+
+		if (loadDefaultFile(&tmp, alt_cfg_path) == 1)
+		{
+			fprintf(stderr, "Unable to load .cfg file\n");	
+		}
 	}
 
 	/* No need to try to act upon the program name, ie: argv[0] */
@@ -486,6 +544,26 @@ int main(int argc, char **argv)
 		}
 
 		fclose(handle);
+	}
+
+	if (model_path != NULL)
+	{
+		free(model_path);
+	}
+
+	if (lora_path != NULL)
+	{
+		free(lora_path);
+	}
+
+	if (vae_path != NULL)
+	{
+		free(vae_path);
+	}
+
+	if (bin_path != NULL)
+	{
+		free(bin_path);
 	}
 
 	return num_bad_files;

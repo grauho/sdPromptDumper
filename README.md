@@ -43,7 +43,8 @@ together manually:
 cc -Wall -pedantic -O2 -c -o main.o main.c
 cc -Wall -pedantic -O2 -c -o stiTokenizer.o stiTokenizer.c
 cc -Wall -pedantic -O2 -c -o pngProcessing.o pngProcessing.c
-cc -Wall -pedantic -O2 -o sdPromptDump main.o stiTokenizer.o pngProcessing.o
+cc -Wall -pedantic -O2 -c -o loadConfig.o loadConfig.c
+cc -Wall -pedantic -O2 -o sdPromptDump main.o stiTokenizer.o pngProcessing.o loadConfig.o
 ```
 
 Notes: 
@@ -56,19 +57,31 @@ information below for more information.
 
 ## Command Line Options
 
-    -M, --model <DIR PATH> : Prepends this path to the encoded model name 
-    -L, --lora  <DIR PATH> : Passes this path directly to --lora-model-dir
-    -B, --bin   <DIR PATH> : Prepends this path to the sd executable 
-    -V, --vae  <FILE PATH> : Passes this file path directly to --vae
-    -a, --abrv             : Uses abreviated switch names in the output
-    -e, --endian           : Prints assumed endian form and exits
-    -h, --help             : Prints a help message much like this one
+    -M, --model  <DIR PATH> : Prepends this path to the encoded model name 
+    -L, --lora   <DIR PATH> : Passes this path directly to --lora-model-dir
+    -B, --bin    <DIR PATH> : Prepends this path to the sd executable 
+    -E, --exe   <FILE NAME> : Alternative name for the sd executable
+    -V, --vae   <FILE PATH> : Passes this file path directly to --vae
+    -c, --config <DIR PATH> : Path to alternative config file directory
+    -a, --abrv              : Uses abreviated switch names in the output
+    -e, --endian            : Prints assumed endian form and exits
+    -h, --help              : Prints a help message much like this one
 
 Notes:
 
-* By default no path is prepended "sd" in the result unless set with -B, this
-is to accommodate those who have it installed somewhere like /usr/local/bin. 
-This program is well suited to an alias that sets -M, -L, and -B.
+* By default no path is prepended to "sd" in the result unless set with -B, 
+this is to accommodate those who have it installed somewhere like 
+/usr/local/bin. Default arguments for --model, --lora, --vae, --bin, --exe, and 
+--abrv may be set by providing a configuration file, sdPromptDumper.cfg, in
+the appropriate directory. ie:
+
+    POSIX:   $HOME/.config/sdPromptDumper/sdPromptDumper.cfg
+    WINDOWS: %HOMEPATH%\AppData\Local\sdPromptDumper\sdPromptDumper.cfg
+
+Users should create this configuration directory themselves. An alternative 
+configuration path may be supplied with the -c, --config switch. An example 
+config file is included in this repo, exampleConfig.cfg, This has only been 
+tested on Linux. 
 
 * Should the endian switch suggest a different byte order than what is known
 to be the system order the behavior can be forced by defining either 
