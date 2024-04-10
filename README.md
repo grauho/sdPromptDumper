@@ -76,9 +76,10 @@ this is to accommodate those who have it installed somewhere like
 the appropriate directory. ie:
 
     POSIX:   $HOME/.config/sdPromptDumper/sdPromptDumper.cfg
+
     WINDOWS: %HOMEPATH%\AppData\Local\sdPromptDumper\sdPromptDumper.cfg
 
-Users should create this configuration directory themselves. An alternative 
+* Users should create the configuration directory themselves. An alternative 
 configuration path may be supplied with the -c, --config switch. An example 
 config file is included in this repo, exampleConfig.cfg, This has only been 
 tested on Linux. 
